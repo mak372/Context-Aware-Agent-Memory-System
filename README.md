@@ -1,10 +1,10 @@
 # Context-Aware Agent Memory System with Verifiable Retention Scoring
 
-A research project exploring proactive memory management for LLM agents. Instead of keeping all conversation history in context until the window fills up, this system continuously validates which memories actually influence agent reasoning — and demotes the ones that don't.
+A research project exploring proactive memory management for LLM agents. Instead of keeping all conversation history in context until the window fills up, this system continuously validates which memories actually influence agent reasoning and demotes the ones that don't.
 
 ## The Problem
 
-Current LLM systems (LangChain, raw API calls) handle long conversations by appending every message to context until the window fills up, then reactively truncating based on recency or semantic similarity. These are heuristics — they don't verify whether a memory chunk actually affects the model's answers.
+Current LLM systems (LangChain, raw API calls) handle long conversations by appending every message to context until the window fills up, then reactively truncating based on recency or semantic similarity. These are heuristics they don't verify whether a memory chunk actually affects the model's answers.
 
 **Result:** token usage grows linearly (or worse) with conversation length, and there's no guarantee that important context is retained.
 
