@@ -116,7 +116,7 @@ python run_experiment.py
 ## Key Design Decisions
 
 **Why not just use LangChain memory?**
-LangChain's memory modules use recency or semantic similarity as heuristics for what to keep. This system uses a verifiable signal — if removing a chunk doesn't change the model's answer, it provably wasn't needed.
+LangChain's memory modules use recency or semantic similarity as heuristics for what to keep. This system uses a verifiable signal if removing a chunk doesn't change the model's answer, it provably wasn't needed.
 
 **Why three tiers instead of two?**
 HOT keeps verbatim recent context for coherence. WARM keeps compressed summaries of older turns cheaply. COLD handles long-range retrieval without polluting the context window on every turn.
