@@ -3,8 +3,12 @@ Run a scripted 50-turn conversation through the tiered memory agent
 and compare token usage against the naive (append-everything) approach.
 """
 
+import time
+
 from agent.graph import build_graph, chat, create_session
-from measurement.tracker import NaiveTracker, TurnRecord, print_summary, save_results
+from measurement.tracker import (NaiveTracker, RetentionRecord, TurnRecord,
+                                  print_retention_summary, print_summary,
+                                  save_results, save_retention_log)
 
 # Scripted conversation — 50 turns covering varied topics so cold retrieval is exercised
 TURNS = [
@@ -60,7 +64,7 @@ TURNS = [
     "Give me a final summary of all the key decisions I've made in this conversation.",
 ]
 
-assert len(TURNS) == 50, f"Expected 50 turns, got {len(TURNS)}"
+TURNS_TO_RUN = TURNS[:25]
 
 
 def main():
@@ -69,9 +73,10 @@ def main():
     session_id = create_session()
     naive = NaiveTracker()
     records: list[TurnRecord] = []
+    retention_records: list[RetentionRecord] = []
 
-    for i, user_input in enumerate(TURNS, start=1):
-        print(f"\n[Turn {i}/50] {user_input[:60]}...")
+    for i, user_input in enumerate(TURNS_TO_RUN, start=1):
+        print(f"\n[Turn {i}/{len(TURNS_TO_RUN)}] {user_input[:60]}...")
 
         result = chat(graph, session_id, i, user_input)
         tiered_tokens = result["tokens_used"]
@@ -81,9 +86,23 @@ def main():
         print(f"  Tiered: {tiered_tokens} tokens | Naive: {naive_tokens} tokens")
         print(f"  Response: {result['response'][:100]}...")
 
+        for pr in result.get("probe_results", []):
+            retention_records.append(RetentionRecord(
+                turn=i,
+                turn_range=pr["turn_range"],
+                probe_question=pr["probe_question"],
+                score=pr["score"],
+                redundant=pr["redundant"],
+                decision="demoted" if pr["redundant"] else "kept",
+            ))
+
+        time.sleep(8)  # stay under 12k TPM on Groq free tier
+
     print("\n" + "=" * 50)
     print_summary(records)
     save_results(records)
+    print_retention_summary(retention_records)
+    save_retention_log(retention_records)
 
 
 if __name__ == "__main__":

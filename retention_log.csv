@@ -1,0 +1,29 @@
+turn,turn_range,probe_question,score,redundant,decision
+10,"(1, 4)","Considering the requirement that the chosen algorithm should scale well for a dataset with 10 million rows, which factor can be overlooked when deciding between ALS and BPR.",0.572,False,kept
+10,"(5, 8)",What type of loss function does Bayesian Personalized Ranking (BPR) typically use compared to the Alternating Least Squares (ALS) algorithm?,0.803,False,kept
+10,"(9, 12)",What are some strategies that could potentially speed up a distributed PySpark training job that takes 4 hours to run?,0.868,True,demoted
+12,"(1, 4)",What type of feedback is present in Alex's dataset: explicit ratings or implicit feedback (such as clicks or purchases)?,0.755,False,kept
+12,"(5, 8)",What type of loss function does the Bayesian Personalized Ranking (BPR) algorithm use to optimize the model?,0.837,False,kept
+12,"(13, 16)",What is the name of the PySpark code snippet that demonstrates content-based filtering for handling the cold-start problem?,0.811,False,kept
+12,"(17, 20)",What is the name of a popular in-memory caching solution recommended for use with a FastAPI service when implementing caching?,0.694,False,kept
+13,"(1, 4)","For a dataset of 10 million user-item interactions, and considering scalability is a top priority, would Bayesian Personalized Ranking (BPR) be a more suitable choice than Alternating Least Squares (ALS) for building the recommendation engine.",0.803,False,kept
+13,"(5, 8)","What type of data loss function does the Alternating Least Squares (ALS) algorithm use for optimization, in contrast to the loss function used by the Bayesian Personalized Ranking (BPR) algorithm?",0.809,False,kept
+13,"(13, 16)",What is an example of a metric used to evaluate the effectiveness of strategies for handling the cold-start problem?,0.677,False,kept
+13,"(17, 20)",What caching strategy is recommended to serve recommendations with a FastAPI service and achieve a response time under 50ms?,0.876,True,demoted
+14,"(1, 4)","What is the primary factor that determines whether to use ALS or BPR in Alex's recommendation engine, given the dataset consists of 10 million user-item interactions?",0.764,False,kept
+14,"(5, 8)",What type of loss function does the Alternating Least Squares (ALS) algorithm for collaborative filtering typically use to optimize the model?,0.840,False,kept
+14,"(13, 16)",What PySpark algorithm uses item attributes to recommend items to a new user based on their user profile?,0.739,False,kept
+14,"(21, 24)",What are some common methods to split traffic between two ranking models for A/B testing?,0.713,False,kept
+15,"(1, 4)","Given the large size of Alex's dataset with 10 million user-item interactions, which would be more scalable and suitable for this type of data, ALS or BPR?",0.855,True,demoted
+16,"(5, 8)","Which algorithm is more suitable for datasets with absolute rating values, ALS or BPR?",0.857,True,demoted
+18,"(13, 16)",What are the three popular algorithms for handling the cold-start problem used in some recommender systems?,0.772,False,kept
+18,"(21, 24)",What is a suitable method for splitting traffic between two ranking models in an A/B testing scenario to accurately compare their performance?,0.801,False,kept
+18,"(25, 28)",What is the primary focus of the MAP metric when evaluating the ranking quality of a recommendation system or search engine?,0.933,True,demoted
+20,"(13, 16)",What popular algorithms in PySpark can be used to recommend items to a new user when there is no interaction history available?,0.839,False,kept
+20,"(21, 24)",What specific method is most suitable for splitting traffic for A/B testing two ranking models based on a user's geographical location?,0.764,False,kept
+20,"(29, 32)",How can the Collaborative Filtering scores be re-ranked using a linear algorithm that incorporates additional features to prioritize item diversity over item novelty?,0.840,False,kept
+20,"(33, 36)",What value of the λ parameter controls the optimal trade-off between relevance and diversity in the Maximal Marginal Relevance (MMR) ranking algorithm?,0.907,True,demoted
+22,"(13, 16)",What is an example of a popular algorithm used in content-based filtering for cold-start problem handling in PySpark?,0.775,False,kept
+22,"(21, 24)",What is the primary advantage of logging request metadata in an A/B testing scenario for later offline analysis?,0.907,True,demoted
+24,"(13, 16)",What popular algorithms can be used to tackle the cold-start problem in content-based filtering for new users in a PySpark application?,0.715,False,kept
+24,"(29, 32)",What are some common criteria used to inform the re-ranking decision when building a re-ranking layer on top of Collaborative Filtering scores?,0.851,True,demoted

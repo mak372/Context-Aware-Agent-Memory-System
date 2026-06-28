@@ -1,4 +1,5 @@
 import os
+import time
 import uuid
 from typing import TypedDict
 
@@ -31,8 +32,9 @@ class AgentState(TypedDict):
     turn_number: int
     user_input: str
     response: str
-    tokens_used: int   # tokens sent to model this turn
-    _messages: list    # assembled messages for this turn, passed between nodes
+    tokens_used: int      # tokens sent to model this turn
+    probe_results: list   # retention scoring results from this turn's demotion cycle
+    _messages: list       # assembled messages for this turn, passed between nodes
 
 
 def assemble_context(state: AgentState) -> AgentState:
@@ -83,9 +85,19 @@ def assemble_context(state: AgentState) -> AgentState:
 def call_model(state: AgentState) -> AgentState:
     messages = state["_messages"]  # type: ignore[typeddict-item]
     llm = _get_llm()
-    response = llm.invoke(messages)
-    state["response"] = response.content
-    return state
+    for attempt in range(5):
+        try:
+            response = llm.invoke(messages)
+            state["response"] = response.content
+            return state
+        except Exception as e:
+            if "429" in str(e) or "rate_limit" in str(e).lower():
+                wait = 10 * (attempt + 1)
+                print(f"  [rate limit] waiting {wait}s before retry {attempt+1}/5...")
+                time.sleep(wait)
+            else:
+                raise
+    raise RuntimeError("call_model failed after 5 retries")
 
 
 def write_memory(state: AgentState) -> AgentState:
@@ -95,7 +107,8 @@ def write_memory(state: AgentState) -> AgentState:
     write_hot(session_id, turn * 2 - 1, "user", state["user_input"], count_tokens(state["user_input"]))
     write_hot(session_id, turn * 2, "assistant", state["response"], count_tokens(state["response"]))
 
-    run_demotion_cycle(session_id)
+    probe_results = run_demotion_cycle(session_id)
+    state["probe_results"] = probe_results
     return state
 
 
@@ -127,6 +140,11 @@ def chat(graph, session_id: str, turn_number: int, user_input: str) -> dict:
         "user_input": user_input,
         "response": "",
         "tokens_used": 0,
+        "probe_results": [],
         "_messages": [],
     })
-    return {"response": result["response"], "tokens_used": result["tokens_used"]}
+    return {
+        "response": result["response"],
+        "tokens_used": result["tokens_used"],
+        "probe_results": result["probe_results"],
+    }

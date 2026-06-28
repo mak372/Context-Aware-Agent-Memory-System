@@ -7,7 +7,7 @@ from agent.llm_factory import get_llm
 from memory.store import (
     count_hot, count_warm,
     delete_hot_turns, delete_warm_by_id,
-    get_oldest_hot_turns, get_oldest_warm,
+    get_oldest_hot_turns, get_oldest_warm, read_warm,
     write_cold, write_warm,
 )
 
@@ -15,7 +15,8 @@ load_dotenv()
 
 HOT_TURN_LIMIT = int(os.getenv("HOT_TURN_LIMIT", "10"))
 WARM_ENTRY_LIMIT = int(os.getenv("WARM_ENTRY_LIMIT", "5"))
-SUMMARY_MODEL = os.getenv("SUMMARY_MODEL", "qwen2.5:1.5b")
+SUMMARY_MODEL = os.getenv("SUMMARY_MODEL", "llama-3.1-8b-instant")
+USE_RETENTION_SCORING = os.getenv("USE_RETENTION_SCORING", "true").lower() == "true"
 
 _enc = tiktoken.get_encoding("cl100k_base")
 _summarizer = None
@@ -43,15 +44,10 @@ def _summarize_turns(turns: list[dict]) -> str:
 
 
 def demote_hot_to_warm(session_id: str):
-    """
-    When hot tier exceeds HOT_TURN_LIMIT individual messages,
-    take the oldest half and compress them into a single warm summary.
-    """
     hot_count = count_hot(session_id)
     if hot_count <= HOT_TURN_LIMIT:
         return
 
-    # Demote the oldest half of the hot tier
     n_to_demote = hot_count // 2
     oldest_turns = get_oldest_hot_turns(session_id, n_to_demote)
 
@@ -60,7 +56,6 @@ def demote_hot_to_warm(session_id: str):
 
     summary = _summarize_turns(oldest_turns)
     token_count = count_tokens(summary)
-
     turn_start = oldest_turns[0]["turn_number"]
     turn_end = oldest_turns[-1]["turn_number"]
 
@@ -70,26 +65,46 @@ def demote_hot_to_warm(session_id: str):
     print(f"[demotion] HOT→WARM: turns {turn_start}-{turn_end} summarized ({token_count} tokens)")
 
 
-def demote_warm_to_cold(session_id: str):
+def demote_warm_to_cold(session_id: str) -> list[dict]:
     """
-    When warm tier exceeds WARM_ENTRY_LIMIT entries,
-    embed and push the oldest entry into the cold vector store.
+    Phase 2: probe each WARM chunk before demoting.
+    Only demotes chunks that are proven redundant.
+    Falls back to age-based if USE_RETENTION_SCORING=false.
+    Returns list of probe results for measurement.
     """
     warm_count = count_warm(session_id)
     if warm_count <= WARM_ENTRY_LIMIT:
-        return
+        return []
 
-    oldest = get_oldest_warm(session_id)
-    if oldest is None:
-        return
+    probe_results = []
 
-    write_cold(session_id, oldest["turn_range"], oldest["summary"])
-    delete_warm_by_id(oldest["id"])
+    if not USE_RETENTION_SCORING:
+        # Phase 1 behaviour — demote oldest unconditionally
+        oldest = get_oldest_warm(session_id)
+        if oldest:
+            write_cold(session_id, oldest["turn_range"], oldest["summary"])
+            delete_warm_by_id(oldest["id"])
+            print(f"[demotion] WARM→COLD (age-based): turns {oldest['turn_range']}")
+        return []
 
-    print(f"[demotion] WARM→COLD: turns {oldest['turn_range']} embedded into vector store")
+    # Phase 2 — probe all warm chunks, demote only redundant ones
+    from memory.probe import score_chunk
+    warm_entries = read_warm(session_id)
+
+    for chunk in warm_entries:
+        result = score_chunk(session_id, chunk)
+        probe_results.append(result)
+
+        if result["redundant"]:
+            write_cold(session_id, chunk["turn_range"], chunk["summary"])
+            delete_warm_by_id(chunk["id"])
+            print(f"[demotion] WARM→COLD (verified redundant, score={result['score']:.3f}): turns {chunk['turn_range']}")
+            break  # demote one per cycle, re-check next turn
+
+    return probe_results
 
 
-def run_demotion_cycle(session_id: str):
-    """Single entry point — call this after every turn write."""
+def run_demotion_cycle(session_id: str) -> list[dict]:
+    """Single entry point — call this after every turn write. Returns probe results."""
     demote_hot_to_warm(session_id)
-    demote_warm_to_cold(session_id)
+    return demote_warm_to_cold(session_id)
