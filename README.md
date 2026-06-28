@@ -4,7 +4,7 @@ A research project exploring proactive memory management for LLM agents. Instead
 
 ## The Problem
 
-Current LLM systems (LangChain, raw API calls) handle long conversations by appending every message to context until the window fills up, then reactively truncating based on recency or semantic similarity. These are heuristics — they don't verify whether a memory chunk actually affects the model's answers.
+Current LLM systems (LangChain, raw API calls) handle long conversations by appending every message to context until the window fills up, then reactively truncating based on recency or semantic similarity. These are heuristics they don't verify whether a memory chunk actually affects the model's answers.
 
 **Result:** token usage grows linearly (or worse) with conversation length, and there's no guarantee that important context is retained.
 
@@ -177,7 +177,7 @@ python eval_recall.py
 ## Key Design Decisions
 
 **Why not just use LangChain memory?**
-LangChain's memory modules use recency or semantic similarity as heuristics for what to keep. This system uses a verifiable signal — if removing a chunk doesn't change the model's answer, it provably wasn't needed.
+LangChain's memory modules use recency or semantic similarity as heuristics for what to keep. This system uses a verifiable signal if removing a chunk doesn't change the model's answer, it provably wasn't needed.
 
 **Why three tiers instead of two?**
 HOT keeps verbatim recent context for coherence. WARM keeps compressed summaries of older turns cheaply. COLD handles long-range retrieval without polluting the context window on every turn.
@@ -191,7 +191,7 @@ At 0.80: conservative, preserves chunks that have even moderate influence. Recom
 
 ## Groq Free Tier Notes
 
-- `llama-3.3-70b-versatile`: 100k tokens/day — use for main model
-- `llama-3.1-8b-instant`: 500k tokens/day (separate limit) — use for summary and probe calls
+- `llama-3.3-70b-versatile`: 100k tokens/day use for main model
+- `llama-3.1-8b-instant`: 500k tokens/day (separate limit) use for summary and probe calls
 - Both models: 6k tokens/minute — the agent retries automatically on 429 errors
 - For `eval_recall.py` (49 turns × 2 phases), set `MODEL_NAME=llama-3.1-8b-instant` to stay within daily limits
